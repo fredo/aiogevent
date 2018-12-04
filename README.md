@@ -23,21 +23,19 @@ See also the `aioeventlet project <http://aioeventlet.readthedocs.org/>`_.
 Hello World
 ===========
 
-Code::
+```python
+import aiogevent
 
-    import aiogevent
-    import trollius as asyncio
+def hello_world():
+    print("Hello World")
+    loop.stop()
 
-    def hello_world():
-        print("Hello World")
-        loop.stop()
-
-    asyncio.set_event_loop_policy(aiogevent.EventLoopPolicy())
-    loop = asyncio.get_event_loop()
-    loop.call_soon(hello_world)
-    loop.run_forever()
-    loop.close()
-
+asyncio.set_event_loop_policy(aiogevent.EventLoopPolicy())
+loop = asyncio.get_event_loop()
+loop.call_soon(hello_world)
+loop.run_forever()
+loop.close()
+```
 
 
 API
@@ -61,102 +59,104 @@ yield_future(future, loop=None):
    event loop.
 
    Example of greenlet waiting for a trollius task. The ``progress()``
-   callback is called regulary to see that the event loop in not blocked::
+   callback is called regulary to see that the event loop in not blocked.
 
-        import aiogevent
-        import gevent
-        import trollius as asyncio
-        from trollius import From, Return
+```python
+import aiogevent
+import gevent
+import asyncio
 
-        def progress():
-            print("computation in progress...")
-            loop.call_later(0.5, progress)
+def progress():
+    print("computation in progress...")
+    loop.call_later(0.5, progress)
 
-        @asyncio.coroutine
-        def coro_slow_sum(x, y):
-            yield From(asyncio.sleep(1.0))
-            raise Return(x + y)
+async def coro_slow_sum(x, y):
+    await asyncio.sleep(1.0)
+    return x + y
 
-        def green_sum():
-            loop.call_soon(progress)
+def green_sum():
+     loop.call_soon(progress)
+     task = asyncio.ensure_future(coro_slow_sum(1, 2))
+     value = aiogevent.yield_future(task)
+     print("1 + 2 = %s" % value)
+     loop.stop()
 
-            task = asyncio.async(coro_slow_sum(1, 2))
+asyncio.set_event_loop_policy(aiogevent.EventLoopPolicy())
+gevent.spawn(green_sum)
+loop = asyncio.get_event_loop()
+loop.run_forever()
+loop.close()
+```
 
-            value = aiogevent.yield_future(task)
-            print("1 + 2 = %s" % value)
+   Output
 
-            loop.stop()
-
-        asyncio.set_event_loop_policy(aiogevent.EventLoopPolicy())
-        gevent.spawn(green_sum)
-        loop = asyncio.get_event_loop()
-        loop.run_forever()
-        loop.close()
-
-   Output::
-
-        computation in progress...
-        computation in progress...
-        computation in progress...
-        1 + 2 = 3
+```
+computation in progress...
+computation in progress...
+computation in progress...
+1 + 2 = 3
+```
 
 wrap_greenlet
 -------------
 
 wrap_greenlet(gt):
 
-   Wrap a greenlet into a Future object.
+Wrap a greenlet into a Future object.
 
-   The Future object waits for the completion of a greenlet. The result or
-   the exception of the greenlet will be stored in the Future object.
+The Future object waits for the completion of a greenlet. The result or
+the exception of the greenlet will be stored in the Future object.
 
-   Greenlet of greenlet and gevent modules are supported: ``gevent.greenlet``
-   and ``greenlet.greenlet`` objects.
+Greenlet of greenlet and gevent modules are supported: ``gevent.greenlet``
+and ``greenlet.greenlet`` objects.
 
-   The greenlet must be wrapped before its execution starts. If the
-   greenlet is running or already finished, an exception is raised.
+The greenlet must be wrapped before its execution starts. If the
+greenlet is running or already finished, an exception is raised.
 
-   For ``gevent.Greenlet``, the ``_run`` attribute must be set. For
-   ``greenlet.greenlet``, the ``run`` attribute must be set.
+For ``gevent.Greenlet``, the ``_run`` attribute must be set. For
+``greenlet.greenlet``, the ``run`` attribute must be set.
 
-   Example of trollius coroutine waiting for a greenlet. The ``progress()``
-   callback is called regulary to see that the event loop in not blocked::
+Example of trollius coroutine waiting for a greenlet. The ``progress()``
+callback is called regulary to see that the event loop in not blocked
 
-        import aiogevent
-        import gevent
-        import trollius as asyncio
-        from trollius import From, Return
+```python
+import aiogevent
+import gevent
+import trollius as asyncio
+from trollius import From, Return
 
-        def progress():
-            print("computation in progress...")
-            loop.call_later(0.5, progress)
+def progress():
+    print("computation in progress...")
+    loop.call_later(0.5, progress)
 
-        def slow_sum(x, y):
-            gevent.sleep(1.0)
-            return x + y
+def slow_sum(x, y):
+    gevent.sleep(1.0)
+    return x + y
 
-        @asyncio.coroutine
-        def coro_sum():
-            loop.call_soon(progress)
+@asyncio.coroutine
+def coro_sum():
+    loop.call_soon(progress)
 
-            gt = gevent.spawn(slow_sum, 1, 2)
-            fut = aiogevent.wrap_greenlet(gt, loop=loop)
+    gt = gevent.spawn(slow_sum, 1, 2)
+    fut = aiogevent.wrap_greenlet(gt, loop=loop)
 
-            result = yield From(fut)
-            print("1 + 2 = %s" % result)
+    result = yield From(fut)
+    print("1 + 2 = %s" % result)
 
-        asyncio.set_event_loop_policy(aiogevent.EventLoopPolicy())
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(coro_sum())
-        loop.close()
+asyncio.set_event_loop_policy(aiogevent.EventLoopPolicy())
+loop = asyncio.get_event_loop()
+loop.run_until_complete(coro_sum())
+loop.close()
+```
 
-   Output::
+Output
 
-        computation in progress...
-        computation in progress...
-        computation in progress...
-        1 + 2 = 3
-
+```
+computation in progress...
+computation in progress...
+computation in progress...
+1 + 2 = 3
+```
 
 Installation
 ============
@@ -164,9 +164,9 @@ Installation
 Install aiogevent with pip
 --------------------------
 
-Type::
-
-    pip install aiogevent
+```
+pip install aiogevent
+```
 
 Install aiogevent on Windows with pip
 -------------------------------------
@@ -195,9 +195,9 @@ Requirements:
 - trollius 0.3 or newer (``pip install trollius``), but trollius 1.0 or newer
   is recommended
 
-Type::
-
-    python setup.py install
+```
+python setup.py install
+```
 
 
 To do

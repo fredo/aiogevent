@@ -45,15 +45,14 @@ install_options = {
     "version": "0.3",
     "license": "Apache License 2.0",
     "author": 'Victor Stinner',
-    "author_email": 'victor.stinner@gmail.com',
+    "author_email": 'jpg@jpg.id.au',
 
     "description": "asyncio API (PEP 3156) implemented on top of gevent",
     "long_description": long_description,
     "url": "https://pypi.python.org/pypi/aiogevent",
 
     "classifiers": [
-        "Programming Language :: Python",
-        #"Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
     ],
 
