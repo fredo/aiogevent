@@ -5,32 +5,26 @@ import greenlet
 import socket
 import sys
 import threading
+import selectors
 
-try:
-    import asyncio
+import asyncio
 
-    if sys.platform == 'win32':
-        from asyncio.windows_utils import socketpair
-    else:
-        socketpair = socket.socketpair
-except ImportError:
-    import trollius as asyncio
+if sys.platform == 'win32':
+    from asyncio.windows_utils import socketpair
+else:
+    socketpair = socket.socketpair
 
-    if sys.platform == 'win32':
-        from trollius.windows_utils import socketpair
-    else:
-        socketpair = socket.socketpair
 
 _PY3 = sys.version_info >= (3,)
 
-_EVENT_READ = asyncio.selectors.EVENT_READ
-_EVENT_WRITE = asyncio.selectors.EVENT_WRITE
+_EVENT_READ = selectors.EVENT_READ
+_EVENT_WRITE = selectors.EVENT_WRITE
 
 # gevent 1.0 or newer?
 _GEVENT10 = hasattr(gevent.hub.get_hub(), 'loop')
 
 
-class _Selector(asyncio.selectors._BaseSelectorImpl):
+class _Selector(selectors._BaseSelectorImpl):
     def __init__(self, loop):
         super(_Selector, self).__init__()
         # fd => events
@@ -169,7 +163,7 @@ class EventLoop(asyncio.SelectorEventLoop):
         def time(self):
             return gevent.core.time()
 
-    def call_soon(self, callback, *args):
+    def call_soon(self, callback, *args, context=None):
         handle = super(EventLoop, self).call_soon(callback, *args)
         if self._selector is not None and self._selector._event:
             # selector.select() is running: write into the self-pipe to wake up
@@ -177,7 +171,7 @@ class EventLoop(asyncio.SelectorEventLoop):
             self._write_to_self()
         return handle
 
-    def call_at(self, when, callback, *args):
+    def call_at(self, when, callback, *args, context=None):
         handle = super(EventLoop, self).call_at(when, callback, *args)
         if self._selector is not None and self._selector._event:
             # selector.select() is running: write into the self-pipe to wake up
@@ -204,7 +198,7 @@ def yield_future(future, loop=None):
     The function must not be called from the greenlet running the aiogreen
     event loop.
     """
-    future = asyncio.async(future, loop=loop)
+    future = asyncio.ensure_future(future, loop=loop)
     if future._loop._greenlet == gevent.getcurrent():
         raise RuntimeError("yield_future() must not be called from "
                            "the greenlet of the aiogreen event loop")
