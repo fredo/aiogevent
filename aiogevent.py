@@ -6,6 +6,7 @@ import socket
 import sys
 import threading
 import selectors
+from typing import cast
 
 import asyncio
 
@@ -288,13 +289,11 @@ class EventLoopPolicy(asyncio.AbstractEventLoopPolicy):
         # gevent does not support threads, an attribute is enough
         self._loop = None
 
-    def get_event_loop(self):
-        if not isinstance(threading.current_thread(), threading._MainThread):
-            raise RuntimeError("aiogevent event loop must run in "
-                               "the main thread")
-        if self._loop is None:
-            self._loop = self.new_event_loop()
-        return self._loop
+    def get_event_loop(self) -> asyncio.AbstractEventLoop:
+        loop = self._loop
+        if loop is None:
+            loop = self._loop = self.new_event_loop()
+        return cast(asyncio.AbstractEventLoop, loop)
 
     def set_event_loop(self, loop):
         self._loop = loop
