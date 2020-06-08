@@ -1,5 +1,12 @@
+from gevent.monkey import patch_all
+import gevent
+
+from test_aio_greenlet import spawn_greenlets
+
+patch_all()
 
 
+import aiogevent
 import argparse
 import asyncio
 import logging
@@ -97,16 +104,9 @@ async def run_offer(pc, signaling):
     await consume_signaling(pc, signaling)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Data channels ping/pong")
-    parser.add_argument("role", choices=["offer", "answer"])
-    parser.add_argument("--verbose", "-v", action="count")
-    add_signaling_arguments(parser)
+def aio_loop(args):
 
-    args = parser.parse_args()
-
-    if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
+    asyncio.set_event_loop_policy(aiogevent.EventLoopPolicy())
 
     signaling = create_signaling(args)
     pc = RTCPeerConnection()
@@ -124,3 +124,32 @@ if __name__ == "__main__":
     finally:
         loop.run_until_complete(pc.close())
         loop.run_until_complete(signaling.close())
+
+    loop = asyncio.get_event_loop()
+    loop.run_forever()
+    loop.close()
+
+
+def 
+
+
+def main():
+
+    parser = argparse.ArgumentParser(description="Data channels ping/pong")
+    parser.add_argument("role", choices=["offer", "answer"])
+    parser.add_argument("--verbose", "-v", action="count")
+    add_signaling_arguments(parser)
+
+    args = parser.parse_args()
+
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+
+    greenlets_gevent_sleep = spawn_greenlets(3)
+    greenlet_aio = gevent.spawn(aio_loop, args=args)
+    gevent.joinall(greenlets_gevent_sleep.append(greenlet_aio))
+
+
+if __name__ == "__main__":
+    main()
+
