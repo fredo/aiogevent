@@ -100,22 +100,19 @@ async def run_offer(pc, signaling):
     # send offer
     await pc.setLocalDescription(await pc.createOffer())
     await signaling.send(pc.localDescription)
-
     await consume_signaling(pc, signaling)
 
 
 def aio_loop(args):
-
-    asyncio.set_event_loop_policy(aiogevent.EventLoopPolicy())
-
     signaling = create_signaling(args)
+
     pc = RTCPeerConnection()
     if args.role == "offer":
         coro = run_offer(pc, signaling)
     else:
         coro = run_answer(pc, signaling)
 
-    # run event loop
+    asyncio.set_event_loop_policy(aiogevent.EventLoopPolicy())
     loop = asyncio.get_event_loop()
     try:
         loop.run_until_complete(coro)
@@ -125,16 +122,12 @@ def aio_loop(args):
         loop.run_until_complete(pc.close())
         loop.run_until_complete(signaling.close())
 
-    loop = asyncio.get_event_loop()
-    loop.run_forever()
-    loop.close()
 
-
-def 
+def input_message():
+    message = input("type in your message: ")
 
 
 def main():
-
     parser = argparse.ArgumentParser(description="Data channels ping/pong")
     parser.add_argument("role", choices=["offer", "answer"])
     parser.add_argument("--verbose", "-v", action="count")
@@ -146,8 +139,8 @@ def main():
         logging.basicConfig(level=logging.DEBUG)
 
     greenlets_gevent_sleep = spawn_greenlets(3)
-    greenlet_aio = gevent.spawn(aio_loop, args=args)
-    gevent.joinall(greenlets_gevent_sleep.append(greenlet_aio))
+    greenlets_gevent_sleep.append(gevent.spawn(aio_loop, args=args))
+    gevent.joinall(greenlets_gevent_sleep)
 
 
 if __name__ == "__main__":
