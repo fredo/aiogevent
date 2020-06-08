@@ -170,14 +170,13 @@ def main():
 
 
     greenlet_input = gevent.spawn(input_message, queue=input_queue)
-    greenlet_received = gevent.spawn(print_receive, queue=input_queue)
+    greenlet_received = gevent.spawn(print_receive, queue=received_queue)
 
-    greenlets_gevent_sleep = spawn_greenlets(3)
-    greenlets_gevent_sleep.append(gevent.spawn(aio_loop, args=args))
+    greenlet_aio = gevent.spawn(aio_loop, args=args)
 
     if args.role == "offer":
         received_event.set()
-    gevent.joinall(greenlets_gevent_sleep)
+    gevent.joinall([greenlet_aio])
 
 
 if __name__ == "__main__":
