@@ -1,6 +1,8 @@
+from gevent.event import Event
 from gevent.monkey import patch_all
 import gevent
 
+from aio_queue import AGQueue
 from test_aio_greenlet import spawn_greenlets
 
 patch_all()
@@ -15,6 +17,10 @@ import time
 from aiortc import RTCIceCandidate, RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.signaling import BYE, add_signaling_arguments, create_signaling
 
+
+received_event = Event()
+input_queue = AGQueue()
+received_queue = AGQueue()
 
 def channel_log(channel, t, message):
     print("channel(%s) %s %s" % (channel.label, t, message))
@@ -46,6 +52,8 @@ async def consume_signaling(pc, signaling):
 time_start = None
 
 
+
+
 def current_stamp():
     global time_start
 
@@ -59,6 +67,8 @@ def current_stamp():
 async def run_answer(pc, signaling):
     await signaling.connect()
 
+
+
     @pc.on("datachannel")
     def on_datachannel(channel):
         channel_log(channel, "-", "created by remote party")
@@ -66,10 +76,14 @@ async def run_answer(pc, signaling):
         @channel.on("message")
         def on_message(message):
             channel_log(channel, "<", message)
+            received_queue.aput(message)
 
-            if isinstance(message, str) and message.startswith("ping"):
-                # reply
-                channel_send(channel, "pong" + message[4:])
+        async def send_message():
+            while True:
+                message = await input_queue.aget()
+                channel_send(channel, message)
+
+        asyncio.ensure_future(send_message())
 
     await consume_signaling(pc, signaling)
 
@@ -80,22 +94,21 @@ async def run_offer(pc, signaling):
     channel = pc.createDataChannel("chat")
     channel_log(channel, "-", "created by local party")
 
-    async def send_pings():
+    async def send_message():
         while True:
-            channel_send(channel, "ping %d" % current_stamp())
-            await asyncio.sleep(1)
+            message = await input_queue.aget()
+            channel_send(channel, message)
 
     @channel.on("open")
     def on_open():
-        asyncio.ensure_future(send_pings())
+        asyncio.ensure_future(send_message())
 
     @channel.on("message")
-    def on_message(message):
-        channel_log(channel, "<", message)
+    async def on_message(message):
 
-        if isinstance(message, str) and message.startswith("pong"):
-            elapsed_ms = (current_stamp() - int(message[5:])) / 1000
-            print(" RTT %.2f ms" % elapsed_ms)
+        channel_log(channel, "<", message)
+        await received_queue.aput(message)
+
 
     # send offer
     await pc.setLocalDescription(await pc.createOffer())
@@ -123,8 +136,25 @@ def aio_loop(args):
         loop.run_until_complete(signaling.close())
 
 
-def input_message():
-    message = input("type in your message: ")
+def input_message(queue):
+
+    while True:
+        received_event.wait()
+        received_event.clear()
+        message = input("type in your message: ")
+        queue.put(message)
+
+
+def print_receive(queue):
+
+    while True:
+
+        print("waiting for incoming message")
+        received_message = queue.get()
+        print(f"received: {received_message}")
+        received_event.set()
+
+
 
 
 def main():
@@ -138,8 +168,15 @@ def main():
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
 
+
+    greenlet_input = gevent.spawn(input_message, queue=input_queue)
+    greenlet_received = gevent.spawn(print_receive, queue=input_queue)
+
     greenlets_gevent_sleep = spawn_greenlets(3)
     greenlets_gevent_sleep.append(gevent.spawn(aio_loop, args=args))
+
+    if args.role == "offer":
+        received_event.set()
     gevent.joinall(greenlets_gevent_sleep)
 
 
