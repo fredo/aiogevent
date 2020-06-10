@@ -1,5 +1,9 @@
 from gevent.monkey import patch_all
-patch_all()
+from raiden.network.transport.matrix import make_client
+from raiden.network.transport.matrix.client import GMatrixHttpApi
+from raiden.tests.utils.factories import make_signer, make_signature
+from raiden.utils.signer import Signer, LocalSigner
+
 
 import aiogevent
 import asyncio
@@ -44,6 +48,11 @@ def aio_loop(coroutines):
     loop = asyncio.get_event_loop()
     loop.run_forever()
     loop.close()
+
+
+
+
+
 
 
 def main():
