@@ -1,6 +1,6 @@
 import asyncio
 
-import aiogevent
+from ping_pong_chat import aiogevent
 import gevent
 from gevent.queue import Queue
 

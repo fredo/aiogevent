@@ -24,7 +24,8 @@ Hello World
 ===========
 
 ```python
-import aiogevent
+
+from ping_pong_chat import aiogevent
 
 def hello_world():
     print("Hello World")
@@ -62,7 +63,8 @@ yield_future(future, loop=None):
    callback is called regulary to see that the event loop in not blocked.
 
 ```python
-import aiogevent
+
+from ping_pong_chat import aiogevent
 import gevent
 import asyncio
 
@@ -120,7 +122,8 @@ Example of trollius coroutine waiting for a greenlet. The ``progress()``
 callback is called regulary to see that the event loop in not blocked
 
 ```python
-import aiogevent
+
+from ping_pong_chat import aiogevent
 import gevent
 import trollius as asyncio
 from trollius import From, Return

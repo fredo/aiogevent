@@ -1,9 +1,7 @@
-import aiogevent
+from ping_pong_chat import aiogevent
 import gevent
 import sys
 import tests
-from tests import asyncio
-
 
 SHORT_SLEEP = 0.001
 

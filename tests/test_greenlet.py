@@ -1,4 +1,4 @@
-import aiogevent
+from ping_pong_chat import aiogevent
 import greenlet
 import tests
 
